@@ -536,7 +536,72 @@ Submit a **proposal** for building this system using GenAI (OpenAI/Gemini) for �
 
 ### Your Solution for problem 3:
 
-You need to put your solution here.
+**Building a GenAI-powered Smart Document Templating System that:**
+1. Converts any uploaded DOCX into a reusable template.
+2. Uses GenAI (OpenAI/Gemini) to detect editable fields automatically.
+3. Allows single document generation via a form.
+4. Enables bulk document generation using Excel/Google Sheets.
+5. Preserves formatting and outputs DOCX and/or PDF.
+
+The core intelligence of this system is a LLM-based template field detection and schema generation, while document rendering remains deterministic and reliable.
+
+### System Architecture
+  ```
+  User Upload (DOCX)
+          ↓
+  DOCX Parser (structure extraction)
+          ↓
+  GenAI Field Detection Engine
+          ↓
+  Field Schema + Validation Rules
+          ↓
+  Template Storage (DB + File Storage)
+          ↓
+  Single or Bulk Data Input
+          ↓
+  Document Rendering Engine
+          ↓
+  DOCX/PDF Output + ZIP + Report
+  ```
+
+### Tecchnicals
+* **Backend:**
+  * Python (FastAPI / Flask)
+  * DOCX parsing: python-docx
+  * Templating: docxtpl
+  * PDF conversion: LibreOffice / docx2pdf
+  * Background jobs: Celery / RQ
+  * Storage: S3-compatible (AWS/GCP/MinIO)
+
+* **GenAI:**
+    * OpenAI (GPT-4 / GPT-4.1)
+    * Google (Gemini 1.5)
+
+**LLM will be used only for:**
+* Template field detection
+* Field type inference
+* Schema generation
+* Optional conditional block detection
+
+### Template Creation
+* **Step 1: DOCX Structure Extraction**
+  Parse -
+    * Paragraphs
+    * Tables
+    * Headers/footers
+    * Text runs
+
+Convert into structured JSON:
+  ```
+  {
+    "paragraphs": [...],
+    "tables": [...],
+    "headers": [...],
+    "footers": [...]
+  }
+  ```
+This is to preserve formatting so that only text content is analyzed.
+
 
 ## Problem 4: Architecture Proposal for 5-Min Character Video Series Generator
 
