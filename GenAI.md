@@ -67,7 +67,7 @@ No code required. We want a **clear, practical proposal** with architecture and 
 4. Managed infrastructure
 5. Fast to setup and deploy
 
-**Limitations -**
+**Cons -**
 1. Expensive for large video volums
 2. Privacy concers
 3. Limited control over:
@@ -226,9 +226,138 @@ This is to guarantee:
 * Visual assets match summary
 * No drift between summary and video
 
+**8. Handling Ambiguity and Review Flow**
 
+Ambiguity could occur if:
+* Transcript quality is poor
+* Topic shift are unclear
+* Highlight overlaps occur
 
-Example:
+This could be solved by implementing:
+* Confidence score per highlight and flag the ones with low-confidence items (<0.6)
+* Log raw LLM output
+* JSON validation with error raising
+* Retry mechanism possible
+* Option to review low-confidence highlights, manually.
+
+This would show:
+  Handling of ambiguity + user review flow
+
+**9. Batch Processing and Error Isolation**
+
+The system processes all videos in folder:
+  ```
+  for video in input/videos:
+      try:
+          process(video)
+      except:
+          log error
+          continue
+  ```
+Features:
+* Continues even if one video fails.
+* Logs error per file.
+* Structured folder per video.
+* Deterministic naming.
+
+This is to align **Bulk generation thinking**.
+
+Output structure:
+  ```
+  output/
+  video_name/
+    Summary.md
+    transcript.json
+    highlights.json
+    clips/
+    screenshots/
+  ```
+
+**Pros -**
+* Best balance of cost + quality
+* Cloud LLM intelligence
+* Local heavy processing
+* Scalable
+* Customizable
+* Controlled JSON schema
+* Good for production
+
+**Cons -**
+* API cost
+* Internet dependency
+* Requires error handling for LLM instability
+
+### **Approach 3: Fully Offline (Open Source Only)**
+  ### Architecture
+  ```
+  Video
+    ↓
+  FFmpeg Whisper (local)
+    ↓
+  Local LLM (Llama/Mistral)
+    ↓
+  JSON Parser
+    ↓
+  Clip Generator
+    ↓
+  Markdown
+  ```
+
+**Requirements**
+* GPU recommended
+* 16–32GB RAM minimum
+* Local LLM (Llama 3 / Mistral 7B+)
+* Quantized model
+
+**Pros**
+* No API cost
+* Full privacy
+* Offline capability
+* Fully controllable environment
+
+**Cons**
+* Lower summarization quality
+* Higher hallucination risk
+* Complex setup
+* Hardware heavy
+* Slower inference
+* Maintenance burden
+
+**Verdict**
+
+Good for:
+  * Enterprise privacy use cases
+  * Air-gapped environments
+Not ideal for:
+  * Fast deployment
+  * High-quality summarization
+
+### Final Recommendation
+
+After practical implementation and evaluation, I recommend the **Hybrid Architecture**. As,
+
+It provides:
+  * High-quality semantic reasoning (LLM APIs)
+  * Local control over media
+  * Structured JSON validation
+  * Reliable timestamp alignment
+  * Scalable batch processing
+  * Production-level extensibility
+
+And, 
+
+It balances:
+  * Cost
+  * Quality
+  * Privacy
+  * Engineering complexity
+
+This architecture is the most practical and scalable solution for the given constraints.
+
+### Final Note
+
+This proposal prioritizes reliability, scalability, and structured output control, essential qualities when building GenAI systems intended for long-form content processing at scale.
+
 ## Problem 2: **Zero-Shot Prompt to generate 3 LinkedIn Post**
 
 Design a **single zero-shot prompt** that takes a user’s persona configuration + a topic and generates **3 LinkedIn post drafts** in **3 distinct styles**, each aligned to the user’s voice and constraints. The output must be structured so the app can: show 3 drafts to the user. Assume we are consuming **OpenAI API / Gemini API** with **one prompt call** (no fine-tuning). Your prompt must reliably produce valid, structured output. [READ MORE ABOUT THE PROJECT](./linkedin-automation.md)
@@ -237,7 +366,159 @@ Design a **single zero-shot prompt** that takes a user’s persona configuration
 
 ### Your Solution for problem 2:
 
-You need to put your solution here.
+This prompt handles structured content generation only. Scheduling, timezone normalization, and publishing are handled by backend services after explicit user approval, ensuring separation of concerns and production reliability.
+
+The architecture for Scheduling the post might look something like:
+
+   **Architecture**
+   ```
+  LLM
+   ↓
+  Generate drafts
+   ↓
+  User
+   ↓  
+  Select draft
+   ↓
+  Backend
+   ↓
+  Decide publish_now OR schedule
+   ↓
+  Scheduler
+   ↓
+  Execute
+  ```
+### Prompt:
+```
+You are a senior LinkedIn content strategist and ghostwriter.
+
+Your task is to generate THREE distinct LinkedIn post drafts based on:
+
+1. User Persona Configuration
+2. A Topic
+3. Optional Context, Audience and Goal
+
+The three drafts must:
+- Be clearly different in structure, rhythm, and delivery style
+- Preserve the exact voice and constraints of the persona
+- Address the same core topic
+- Be LinkedIn-ready
+- Avoid repetition between drafts
+
+Return output in the EXACT structured format shown below.
+Do NOT add commentary.
+Do NOT add explanations.
+Do NOT use markdown formatting.
+Do NOT wrap anything in code blocks.
+
+---------------------------------------------------
+INPUTS
+---------------------------------------------------
+
+PERSONA_CONFIGURATION:
+{{persona_configuration}}
+
+TOPIC:
+{{topic}}
+
+OPTIONAL_CONTEXT:
+{{optional_context}}
+
+TARGET_AUDIENCE:
+{{target_audience}}
+
+POST_GOAL:
+{{post_goal}}
+
+---------------------------------------------------
+CRITICAL REQUIREMENTS
+---------------------------------------------------
+
+1) PERSONA LOCK
+- Match tone, communication style, vocabulary, and professional maturity.
+- Follow do/don’t guidelines strictly.
+- Do not exaggerate experience level.
+- Do not invent achievements.
+- Avoid generic motivational fluff unless persona prefers it.
+- Maintain consistency across all 3 drafts.
+
+2) STYLE DIFFERENTIATION
+Instead of fixed templates, generate three stylistically distinct formats that feel naturally different. Examples of variation include:
+
+- Contrarian perspective
+- Personal reflection
+- Mini-framework
+- Data-driven breakdown
+- Thought-provoking question thread
+- Tactical how-to
+- Industry observation
+- Lessons learned
+- Myth-busting
+- Strategic insight
+
+Each draft must:
+- Feel structurally different
+- Use different opening hooks
+- Use different pacing and flow
+- Avoid repeating the same sentences or phrasing
+
+3) LINKEDIN OPTIMIZATION
+- Use natural short paragraphs
+- Use spacing for readability
+- 0–3 relevant emojis only if persona allows
+- 3–5 relevant hashtags
+- No clickbait
+- No engagement bait (“comment YES”, etc.)
+- No spam tone
+- No policy-violating content
+
+4) LENGTH
+Each draft: 150–300 words.
+
+---------------------------------------------------
+OUTPUT FORMAT (STRICT)
+---------------------------------------------------
+
+=== DRAFT 1 ===
+STYLE: <describe style in 3-5 words>
+TITLE: <internal working title>
+
+<LinkedIn post content>
+
+--- END DRAFT 1 ---
+
+
+=== DRAFT 2 ===
+STYLE: <describe style in 3-5 words>
+TITLE: <internal working title>
+
+<LinkedIn post content>
+
+--- END DRAFT 2 ---
+
+
+=== DRAFT 3 ===
+STYLE: <describe style in 3-5 words>
+TITLE: <internal working title>
+
+<LinkedIn post content>
+
+--- END DRAFT 3 ---
+
+
+FINAL_CHECK:
+Persona Alignment Confidence: <0–100>
+Style Distinction Confidence: <0–100>
+Policy Risk Level: low | medium | high
+
+After generating drafts, ensure each draft:
+- Is ready for direct publishing without modification
+- Contains no placeholders
+- Contains no dynamic references to time (“today”, “this morning”) unless context requires
+- Does not depend on publishing time
+
+Generate the response now.
+```
 
 ## Problem 3: **Smart DOCX Template → Bulk DOCX/PDF Generator (Proposal + Prompt)**
 
