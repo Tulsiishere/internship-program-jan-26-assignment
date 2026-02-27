@@ -667,6 +667,7 @@ LLM Output -
 ### Template Stoage
 
 We have to store:
+
 **1. Original DOCX**
 
 **2. Template Metadata (DB)**
