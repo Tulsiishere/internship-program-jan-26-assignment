@@ -564,7 +564,7 @@ The core intelligence of this system is a LLM-based template field detection and
   DOCX/PDF Output + ZIP + Report
   ```
 
-### Tecchnicals
+### Technicals
 * **Backend:**
   * Python (FastAPI / Flask)
   * DOCX parsing: python-docx
@@ -602,6 +602,169 @@ Convert into structured JSON:
   ```
 This is to preserve formatting so that only text content is analyzed.
 
+* **Step 2: Field Detection Using GenAI**
+  Here, the extracted text will be sent to the LLM with a structured prompt:
+
+  The main Objective here is to detect -
+    * Repeated variable patterns.
+    * Candidate-specific placeholders.
+    * Dynamic entities, like Name, Date, Amount, etc.
+    * Content-based variable suggestions.
+
+Example Prompt that can be used for OpenAI/Gemini:
+```
+You are a document schema detection system.
+
+Given the following Word document text, identify:
+1. Fields that are likely to change per document.
+2. Assign a clean field name.
+3. Infer type (text, date, currency, number).
+4. Suggest validation rules.
+5. Suggest example values.
+
+Return ONLY JSON in this format:
+{
+  "fields": [
+    {
+      "original_text": "...",
+      "field_name": "...",
+      "type": "...",
+      "required": true/false,
+      "validation": "...",
+      "example": "..."
+    }
+  ]
+}
+```
+
+**An example to understand the output of this prompt:**
+Input - 
+  This offer letter is for Mr. Rahul Sharma joining as a Software Engineer with a salary of
+  ₹12,00,000 per annum, effective from 10 March 2026.
+
+LLM Output - 
+  ```
+  {
+    "fields": [
+      {"field_name": "candidate_name", "type": "text"},
+      {"field_name": "role", "type": "text"},
+      {"field_name": "salary", "type": "currency"},
+      {"field_name": "joining_date", "type": "date"}
+    ]
+  }
+  ```
+
+* **Step 3: Filed Confirmation UI**
+  The user only sees:
+    * Suggested fields
+    * Editable field names
+    * Type dropdown
+    * Required toggle
+    * Optional conditional blocks (advanced)
+
+  The user can then confirm, and the template is saved.
+
+### Template Stoage
+
+We have to store:
+**1. Original DOCX**
+
+**2. Template Metadata (DB)**
+```
+{
+  "template_id": "offer_letter_v1",
+  "fields": [
+    {
+      "name": "candidate_name",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "created_at": "...",
+  "owner_id": "..."
+}
+```
+### Generation Flow for Single Documents
+1. User selects template.
+2. Dynamic from auto-generated from schema.
+3. Field validation happens in the backend.
+4. Template rendered using docxtpl
+5. Output generated:
+     * DOCX
+     * PDF
+   File naming pattern:
+```<CandidateName>_<TemplateName>_<Date>.pdf```
+
+### Generation Flow for Documents in Bulk
+
+Let's suppose the system provides a downloadable Excel format:
+
+| candidate_name | role | salary | joining_date |
+| -------------- | ---- | ------ | ------------ |
+
+* **Step 1: Upload the Sheet**
+    This would .xlsx for Excel upload, and secure OAuth for Google Sheets API
+  
+* **Step 2: Bulk Processing**
+  For each row:
+  * Validate fields
+  * Render document
+  * Log success/failure
+  * Continue (no full-job crash)
+  Use background queue workers.
+
+* **Step 3: Final Output**
+  The user will receive:
+  * ZIP file of document
+  * Generate report
+  
+  | Row | Status  | Error          |
+  | --- | ------- | -------------- |
+  | 1   | Success | —              |
+  | 3   | Failed  | Missing salary |
+
+### How to Validate and make the model Reliable
+
+**Validation**
+  * Required field check
+  * Date format validation
+  * Currency format normalization
+  * Regex rules
+**Large Batch Handling**
+  * Streaming row processing
+  * Worker queues
+  * Memory-efficient file writing
+  * Temporary storage cleanup
+
+### To Preserve Formatting
+
+**A Key Constraint here is:**
+  Must preserve original Word formatting.
+
+**Solution:**
+* We NEVER rebuild document structure.
+* We replace text placeholders only.
+* Headers/footers processed separately.
+* Tables maintained as-is.
+
+### Security Considerations
+* Encrypted file storage
+* Temporarily signed URLs
+* Sheet access via OAuth (not storing credentials)
+* Auto-deletion policy for generated docs
+* Role-based access control
+
+### Final Vision
+
+A user uploads a normal Word document once.
+
+The system intelligently:
+* Detects editable fields
+* Builds a reusable schema
+* Allows instant form-based generation
+* Scales to thousands of documents in bulk
+
+All this while preserving formatting and generating clean DOCX/PDF outputs with structured reports.
 
 ## Problem 4: Architecture Proposal for 5-Min Character Video Series Generator
 
