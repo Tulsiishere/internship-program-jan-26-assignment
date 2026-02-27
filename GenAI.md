@@ -777,4 +777,260 @@ Create a **small, clear architecture proposal** (no code, no prompts) describing
 
 ### Your Solution for problem 4:
 
-You need to put your solution here.
+### 1. System Overview
+
+The system is divided into 5 five major layers:
+  1. Series Management Layer (Character + World Consistency)
+  2. Episode Intelligence Layer (Story → Structured Episode Plan)
+  3. Asset Generation Layer (Visual + Audio Assets)
+  4. Video Composition Layer (Scene Assembly + Rendering)
+  5. Iteration & Version Control Layer (Editing + Regeneration)
+
+Each layer is modular, so we can regenerate only specific parts (e.g., script only, visuals only, audio only).
+
+### Architecture
+
+### 1. Series Management Layer (Series Bible Engine)
+
+The main purpose of this layer is to maintain long-term character and world consistency across episodes.
+
+**Components**
+
+**A. Character Registry**
+
+Stores:
+* Reference images
+* Generated canonical character portrait
+* Personality traits
+* Speech style rules
+* Emotional behavior boundaries
+* Visual consistency constraints (clothes, age, color palette)
+* Voice identity (voice model ID if applicable)
+Each character gets a unique ```Character ID```.
+
+**B. Relationship Graph Engine**
+
+**Maintains:**
+* Character-to-character relationships
+* Hierarchy (parent/child, mentor/student)
+* Emotional baseline (friendly, tense, rivalry)
+* Forbidden behavior constraints
+
+**Implemented as:**
+* Graph database (nodes = characters, edges = relationships)
+* Used during script generation validation
+
+**C. World & Tone Configuration**
+
+Stores:
+* Setting (school, office, fantasy city, etc.)
+* Recurring themes
+* Tone defaults
+* Platform defaults (9:16 or 16:9)
+
+This layer acts as a persistent memory system for the series.
+
+### 2. Episode Intelligence Layer
+
+This is the *brain* of the system.
+
+**Input:**
+* Episode prompt (situation + goal)
+* Selected characters
+* Tone and style
+* Duration constraint (5 min max.)
+
+**Step 1: Episode Structuring Engine**
+
+Converts short prompt into structured episode format:
+* Act 1: Setup
+* Act 2: Conflict
+* Act 3: Resolution
+
+Duration controller:
+* ~5 minutes target
+* 6–10 scenes
+* Estimated dialogue word count per scene
+* Timing allocation per scene
+
+Output: Structured Episode Blueprint
+
+**Step 2: Character-Constrained Script Generator**
+
+Script generation respects:
+* Personality traits
+* Relationship graph rules
+* Speaking style
+* Emotional limits
+
+Validation Layer:
+* Checks for out-of-character behavior
+* Ensures relationships are honored
+* Ensures tone alignment
+
+Output:
+* Full script (scene-by-scene)
+* Dialogues labeled by character
+* Narration blocks (if enabled)
+
+**Step 3: Scene Breakdown Generator**
+
+Transforms script into:
+* Shot list
+* Scene duration estimates
+* Required character expressions
+* Background/environment type
+* Camera suggestions
+
+Output: Production-ready scene plan.
+
+### 3. Asset Generation Layer
+
+**A. Visual Consistency Engine**
+
+**Problem:** Characters must look identical across episodes.
+
+**Solution:**
+* Store canonical character embedding
+* Use reference image conditioning
+* Apply locked style tokens
+* Reuse seed values (if supported)
+
+**Per Scene Generates:**
+* Character images (correct expression)
+* Background images
+* Props if needed
+
+All assets linked to: ```Episode ID + Scene ID + Character ID```
+
+**B. Voice & Audio Engine**
+
+**Per character:**
+* Persistent voice model
+* Tone alignment (energetic, calm, sarcastic)
+
+**Generates:**
+* Voice lines per dialogue
+* Narration audio
+* Timing metadata
+
+**C. Background Music Engine**
+
+**Based on:**
+* Episode tone
+* Scene emotional shift
+
+**Outputs:**
+* Music tracks
+* Cue timing
+
+### 4. Video Composition Layer
+
+This layer builds the final 5-minute episode.
+
+**Scene Composer**
+
+For each scene:
+* Places background
+* Places character assets
+* Applies motion (pan/zoom)
+* Syncs voice audio
+* Adds captions (optional)
+
+**Timeline Engine**
+
+This is to ensure:
+* Total duration ~5 minutes
+* Smooth transitions
+* Correct pacing
+* Audio synchronization
+
+**Final Renderer**
+
+Exports:
+* 9:16 (Reels/Shorts)
+* 16:9 (YouTube)
+* Optional subtitles
+
+Output: Final MP4 file
+
+### 5. Iteration and Regeneration System
+
+Critical for usability.
+
+**User should be able to:**
+* Edit dialogue
+* Regenerate only a scene
+* Swap a character
+* Change tone
+* Shorten episode to 3 minutes
+
+**How?**
+
+**Versioning Model:**
+* Series Version
+* Episode Version
+* Scene Version
+
+**Regeneration scope:**
+* Script-only
+* Visual-only
+* Audio-only
+* Full rebuild
+
+### Data Flow Summary
+
+1. User creates Series Bible
+2. System stores character and relationship graph
+3. User submits episode prompt
+4. Episode Intelligence Layer creates a structured script
+5. Scene Breakdown generated
+6. Asset Generation creates visuals + audio
+7. Video Composer assembles final timeline
+8. Renderer exports episode
+9. Assets stored for future reuse
+
+### For Consistency:
+
+Enforce 3 layers:
+
+**1. Character Layer:** Locked personality + reference images
+
+**2. Relationship Layer:** 
+
+Graph validation prevents
+* Sudden personality flips
+* Incorrect behavior
+
+**3. Visual Layer:**
+* Seed reuse
+* Embedding storage
+* Expression mapping rules
+
+### Duration Control Strategy (~5 Minutes)
+
+**Control through:**
+* Scene count limits
+* Word-count-to-time estimation
+* Dialogue-to-narration ratio control
+* Hard max runtime constraint in timeline engine
+
+**System recalibrates automatically if:**
+* Episode too long → trim scene dialogue
+* Too short → expand conflict or add reaction beats
+
+### Final Summary
+
+This architecture separates:
+* Long-term memory (Series Bible)
+* Intelligent story structuring (Episode Engine)
+* Consistent asset generation
+* Timeline-based video composition
+* Modular regeneration system
+
+This ensures:
+* Character consistency
+* Relationship accuracy
+* Controlled episode length
+* Easy iteration
+* Scalable production
